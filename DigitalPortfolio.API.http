@@ -1,0 +1,6 @@
+@DigitalPortfolio.API_HostAddress = http://localhost:5010
+
+GET {{DigitalPortfolio.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

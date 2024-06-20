@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DigitalPortfolio.API.Migrations
 {
     [DbContext(typeof(DigitalPortfolioDbContext))]
-    [Migration("20240614113535_Initial")]
+    [Migration("20240619030508_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -38,6 +38,9 @@ namespace DigitalPortfolio.API.Migrations
                     b.Property<string>("IconSVG")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Title")
                         .IsRequired()

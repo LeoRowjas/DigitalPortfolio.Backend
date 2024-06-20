@@ -3,13 +3,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DigitalPortfolio.API.Models;
 
+[PrimaryKey(nameof(ProjectId))]
 public class ProjectModel
 {
-    public Guid Id { get; set; }
-    [ForeignKey("OwnerId")]
-    public Guid UserId { get; set; }
+    public Guid ProjectId { get; set; }
     public string Title { get; set; }
+    
+    [ForeignKey(nameof(OwnerName))]
+    public string OwnerName { get; set; }
+    
     public string Description { get; set; }
     public int LikesCount { get; set; }
-    public DateTime ReceiveDate { get; set; }
+    public DateTime CreationDateTime { get; set; }
 }

@@ -1,5 +1,6 @@
 using DigitalPortfolio.API.Data;
-using DigitalPortfolio.API.Models;
+using DigitalPortfolio.API.Models.Account;
+using DigitalPortfolio.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,77 +9,98 @@ namespace DigitalPortfolio.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class UserController(DigitalPortfolioDbContext context) : ControllerBase
+public class UserController(DigitalPortfolioDbContext context, IAccountService accountService) : ControllerBase
 {
-    private readonly DigitalPortfolioDbContext _context = context;
-    
     [HttpGet]
     [Route("all")]
     public async Task<IActionResult> GetAllUsers()
     {
-        var users = await _context.Users.ToListAsync();
+        var unsecureUsers = await context.Users.ToListAsync();
+        var users = unsecureUsers.Select(x => new
+        {
+            x.Username,
+            x.FirstName,
+            x.LastName,
+            x.Biography,
+            x.Email,
+            x.Achievements,
+            x.Projects,
+        });
         return Ok(users);
     }
 
     [HttpGet]
-    [Route("{id:guid}")]
-    public async Task<IActionResult> GetUserById(Guid id)
+    [Route("{username}")]
+    public async Task<IActionResult> GetUserInfo(string username)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await context.Users.FindAsync(username);
         if(user == null) return BadRequest("User not found");
-
-        return Ok(user);
+        
+        return Ok(new
+        {
+            user.Username,
+            user.FirstName,
+            user.LastName,
+            user.Biography,
+            user.Achievements,
+            user.Projects,
+        });
     }
     
     [HttpPost]
-    [Authorize]
-    [Route("add")]
-    public async Task<IActionResult> PostUser(UserModel user)
+    [AllowAnonymous]
+    [Route("login")]
+    public async Task<IActionResult> LoginUser([FromBody] LoginModel loginModel)
     {
-        var containsNullProperty = user.GetType().GetProperties()
-            .Where(pi => pi.PropertyType == typeof(string) || pi.PropertyType == typeof(Guid))
-            .Select(pi => (string)pi.GetValue(user)!)
-            .Any(string.IsNullOrEmpty);
-        if(containsNullProperty) return BadRequest("Some required fields is null");
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        return Ok(user);
+        return await accountService.LoginAsync(loginModel);
+    }
+    
+    [HttpPost]
+    [AllowAnonymous]
+    [Route("register")]
+    public async Task<IActionResult> RegisterUser([FromBody] RegisterModel registerModel)
+    {
+        return await accountService.RegisterAsync(registerModel);
     }
 
-    [HttpPatch]
     [HttpPut]
     [Authorize]
-    [Route("edit/{id:guid}")]
-    public async Task<IActionResult> EditUser(Guid id, [FromBody] UserModel user)
+    [Route("edit/{username}")]
+    public async Task<IActionResult> EditUser(string username, [FromBody] SelfEditModel selfEditModel)
     {
-        var existingUser = await context.Users.FindAsync(id);
-        if(existingUser == null) return BadRequest("User not found");
-            
-        existingUser.Username = user.Username;
-        existingUser.FirstName = user.FirstName;
-        existingUser.LastName = user.LastName;
-        existingUser.Biography = user.Biography;
-        existingUser.Email = user.Email;
+        var user = await context.Users.FindAsync(username);
+        if (user == null) return BadRequest("User not found");
 
-        context.Users.Update(existingUser);
+        user.FirstName = selfEditModel.FirstName;
+        user.LastName = selfEditModel.LastName;
+        user.Biography = selfEditModel.Biography;
+        user.Email = selfEditModel.Email;
         await context.SaveChangesAsync();
-
-        return Ok(existingUser);
+        
+        return Ok("User updated successfully");
     }
 
     [HttpDelete]
     [Authorize]
-    [Route("delete/{id:guid}")]
-    public async Task<IActionResult> DeleteUser(Guid id)
+    [Route("delete/{username}")]
+    public async Task<IActionResult> DeleteUser(string username)
     {
-        var user = await context.Users.FindAsync(id);
-        if(user == null) return BadRequest("User not found");
+        var user = await context.Users.FindAsync(username);
+        if (user == null) return BadRequest("User not found");
+
+        try
+        {
+            context.Projects.RemoveRange(user.Projects?.Select(x => context.Projects.Find(x))!);
+            context.Likes.RemoveRange(user.Likes?.Select(x => context.Likes.Find(x))!);
+            context.Achievement.RemoveRange(user.Achievements?.Select(x => context.Achievement.Find(x))!);
+        }
+        catch (Exception e)
+        {// ignored
+        }
         
         context.Users.Remove(user);
         await context.SaveChangesAsync();
         
-        return Ok(user);
+        return Ok("User deleted successfully");
     }
 }

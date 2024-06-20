@@ -7,14 +7,14 @@ namespace DigitalPortfolio.API.Helpers;
 
 public class SecurityHelper
 {
-    public static string GetAuthorizationToken(UserModel user)
+    public static string GetAuthorizationToken(UserProfileModel user)
     {
-        var userId = user.Id.ToString();
+        var username = user.Username;
         var email = user.Email;
 
-        var claims = new List<Claim>()
+        var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, userId),
+            new(ClaimTypes.NameIdentifier, username),
             new(ClaimTypes.Email, email)
         };
 

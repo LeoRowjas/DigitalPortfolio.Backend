@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using DigitalPortfolio.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DigitalPortfolio.API.Migrations
 {
     [DbContext(typeof(DigitalPortfolioDbContext))]
-    partial class DigitalPortfolioDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240619070519_SetupKeys")]
+    partial class SetupKeys
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,9 +28,8 @@ namespace DigitalPortfolio.API.Migrations
 
             modelBuilder.Entity("DigitalPortfolio.API.Models.AchievementModel", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -35,13 +37,10 @@ namespace DigitalPortfolio.API.Migrations
                     b.Property<string>("IconSVG")
                         .HasColumnType("text");
 
-                    b.Property<string>("OwnerUsername")
+                    b.Property<string>("OwnerId")
                         .HasColumnType("text");
 
-                    b.Property<string>("Title")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
+                    b.HasKey("Title");
 
                     b.ToTable("Achievement");
                 });
@@ -55,12 +54,7 @@ namespace DigitalPortfolio.API.Migrations
                     b.Property<string>("OwnerUsername")
                         .HasColumnType("text");
 
-                    b.Property<string>("UserProfileModelUsername")
-                        .HasColumnType("text");
-
                     b.HasKey("ProjectId");
-
-                    b.HasIndex("UserProfileModelUsername");
 
                     b.ToTable("Likes");
                 });
@@ -70,9 +64,6 @@ namespace DigitalPortfolio.API.Migrations
                     b.Property<Guid>("ProjectId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreationDateTime")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -85,6 +76,9 @@ namespace DigitalPortfolio.API.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime>("ReceiveDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
@@ -94,7 +88,7 @@ namespace DigitalPortfolio.API.Migrations
                     b.ToTable("Projects");
                 });
 
-            modelBuilder.Entity("DigitalPortfolio.API.Models.UserProfileModel", b =>
+            modelBuilder.Entity("DigitalPortfolio.API.Models.UserModel", b =>
                 {
                     b.Property<string>("Username")
                         .HasColumnType("text");
@@ -114,6 +108,9 @@ namespace DigitalPortfolio.API.Migrations
                     b.Property<string>("LastName")
                         .HasColumnType("text");
 
+                    b.Property<List<Guid>>("Likes")
+                        .HasColumnType("uuid[]");
+
                     b.Property<string>("Password")
                         .HasColumnType("text");
 
@@ -123,18 +120,6 @@ namespace DigitalPortfolio.API.Migrations
                     b.HasKey("Username");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("DigitalPortfolio.API.Models.LikeModel", b =>
-                {
-                    b.HasOne("DigitalPortfolio.API.Models.UserProfileModel", null)
-                        .WithMany("Likes")
-                        .HasForeignKey("UserProfileModelUsername");
-                });
-
-            modelBuilder.Entity("DigitalPortfolio.API.Models.UserProfileModel", b =>
-                {
-                    b.Navigation("Likes");
                 });
 #pragma warning restore 612, 618
         }

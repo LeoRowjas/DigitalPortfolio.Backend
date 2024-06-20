@@ -1,18 +1,17 @@
 ﻿using System.Security.Cryptography;
-using DigitalPortfolio.API.Models;
-using Microsoft.AspNetCore.Identity;
+using DigitalPortfolio.API.Services.Interfaces;
 
 namespace DigitalPortfolio.API.Services;
 
-public class Sha256PasswordHasher : IPasswordHasher<UserModel>
+public class Sha256PasswordHasher : IPasswordHasher
 {
-    private const int REHASH_COUNT = 10000;
+    private const int REHASH_COUNT = 5000;
 
     private const int HASH_SIZE_BYTES = 16;
 
     private const int SALT_SIZE_BYTES = 16;
-    
-    public string HashPassword(UserModel user, string password)
+
+    public string HashPassword(string password)
     {
         var saltBytes = RandomNumberGenerator.GetBytes(SALT_SIZE_BYTES);
 
@@ -30,7 +29,7 @@ public class Sha256PasswordHasher : IPasswordHasher<UserModel>
         return hashedPassword;
     }
 
-    public PasswordVerificationResult VerifyHashedPassword(UserModel user, string hashedPassword, string providedPassword)
+    public bool VerifyHashedPassword(string password, string hashedPassword)
     {
         var fullHashBytes = Convert.FromBase64String(hashedPassword);
 
@@ -38,19 +37,15 @@ public class Sha256PasswordHasher : IPasswordHasher<UserModel>
 
         Array.Copy(fullHashBytes, 0, saltBytes, 0, SALT_SIZE_BYTES);
 
-        using var deriveBytes = GetDeriveBytes(providedPassword, saltBytes);
+        using var deriveBytes = GetDeriveBytes(password, saltBytes);
 
         var hashBytes = deriveBytes.GetBytes(HASH_SIZE_BYTES);
 
         var isMatch = CompareHashes(hashBytes, fullHashBytes);
 
-        return isMatch switch
-        {
-            true => PasswordVerificationResult.Success,
-            false => PasswordVerificationResult.Failed
-        };
+        return isMatch;
     }
-    
+
     private static bool CompareHashes(byte[] hashBytes, byte[] fullHashBytes)
     {
         for (var i = 0; i < HASH_SIZE_BYTES; i++)
